@@ -18,16 +18,32 @@ export default function Inicio() {
   return (
     <main>
       {/* ===== HERO ===== */}
-      <section className="relative w-full">
+      <section className="relative w-full overflow-hidden">
         <img
           src="/images/web/foto1 inicio.jpeg"
           alt="Difusor Sonrisa del Alma con varillas"
-          className="w-full h-auto block"
+          className="w-full h-[65vh] object-cover object-right md:h-auto md:object-auto block"
         />
         <div className="absolute inset-0 bg-gradient-to-b from-black/25 to-black/45" />
-        <div className="absolute inset-0 flex items-center justify-center z-[2]">
+        {/* Mobile */}
+        <div className="absolute inset-0 z-[2] md:hidden">
+          <div className="flex h-full items-center justify-start pl-2 pr-16">
+            <h1 className="font-serif text-xl font-normal leading-[1.3] text-white">
+              Habitá tu espacio<br />con intención<br />consciente
+            </h1>
+          </div>
+          <Link
+            to="/tienda"
+            className="absolute bottom-1 left-1 bg-gold hover:bg-gold-dark text-white text-[0.7rem] tracking-[1.5px] uppercase px-4 py-2.5 transition-colors"
+          >
+            DESCUBRÍ LA COLECCIÓN
+          </Link>
+        </div>
+
+        {/* Desktop */}
+        <div className="absolute inset-0 z-[2] hidden md:flex items-center justify-center">
           <div className="text-center text-white px-6 max-w-[700px]">
-            <h1 className="font-serif text-5xl max-md:text-[2rem] font-normal leading-[1.3] mb-4">
+            <h1 className="font-serif text-[2.8rem] font-normal leading-[1.3] mb-6">
               Habitá tu espacio<br />con intención consciente
             </h1>
             <Link to="/tienda" className="btn-primary">DESCUBRÍ LA COLECCIÓN</Link>

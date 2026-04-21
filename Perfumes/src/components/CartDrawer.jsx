@@ -26,25 +26,26 @@ export default function CartDrawer() {
           <>
             <ul className="flex-1 overflow-y-auto list-none p-0">
               {items.map((item) => (
-                <li key={item.id} className="flex gap-3 px-6 py-4 border-b border-black/5 items-center">
+                <li key={item.cartKey} className="flex gap-3 px-6 py-4 border-b border-black/5 items-center">
                   <img src={getImageUrl(item.image_url)} alt={item.name} className="w-[60px] h-[60px] object-cover rounded-md flex-shrink-0" />
                   <div className="flex-1 min-w-0">
                     <h4 className="font-serif text-[0.9rem] mb-0.5 whitespace-nowrap overflow-hidden text-ellipsis">{item.name}</h4>
                     <p className="text-xs text-[#999]">{item.category}</p>
+                    {item.size && <p className="text-xs text-gold">{item.size}</p>}
                     {item.price && <p className="text-[0.85rem] font-bold text-dark mt-0.5">{item.price}</p>}
                     <div className="flex items-center gap-2 mt-1.5">
                       <button
-                        onClick={() => updateQty(item.id, item.qty - 1)}
+                        onClick={() => updateQty(item.cartKey, item.qty - 1)}
                         className="w-[26px] h-[26px] border border-gold/30 bg-white rounded cursor-pointer text-base flex items-center justify-center text-[#555] hover:border-gold hover:text-gold transition-all"
                       >−</button>
                       <span className="text-[0.9rem] font-semibold min-w-[16px] text-center">{item.qty}</span>
                       <button
-                        onClick={() => updateQty(item.id, item.qty + 1)}
+                        onClick={() => updateQty(item.cartKey, item.qty + 1)}
                         className="w-[26px] h-[26px] border border-gold/30 bg-white rounded cursor-pointer text-base flex items-center justify-center text-[#555] hover:border-gold hover:text-gold transition-all"
                       >+</button>
                     </div>
                   </div>
-                  <button className="bg-transparent border-none text-[#ccc] cursor-pointer hover:text-[#d9534f] transition-colors" onClick={() => removeItem(item.id)}>
+                  <button className="bg-transparent border-none text-[#ccc] cursor-pointer hover:text-[#d9534f] transition-colors" onClick={() => removeItem(item.cartKey)}>
                     <span className="material-icons">delete</span>
                   </button>
                 </li>

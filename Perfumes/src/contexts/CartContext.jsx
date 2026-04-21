@@ -8,31 +8,36 @@ export function CartProvider({ children }) {
   const [items, setItems] = useState([])
   const [open, setOpen] = useState(false)
 
-  const addItem = useCallback((product) => {
+  const addItem = useCallback((product, options = {}) => {
+    const { size = null, imageUrl = null } = options
+    const cartKey = size ? `${product.id}-${size}` : String(product.id)
+
     setItems((prev) => {
-      const exists = prev.find((i) => i.id === product.id)
+      const exists = prev.find((i) => i.cartKey === cartKey)
       if (exists) {
-        return prev.map((i) => i.id === product.id ? { ...i, qty: i.qty + 1 } : i)
+        return prev.map((i) => i.cartKey === cartKey ? { ...i, qty: i.qty + 1 } : i)
       }
       return [...prev, {
+        cartKey,
         id: product.id,
         name: product.name,
         price: product.price,
+        size,
         category: product.categories?.name || '',
-        image_url: product.image_url,
+        image_url: imageUrl || product.image_url,
         qty: 1,
       }]
     })
     setOpen(true)
   }, [])
 
-  const removeItem = useCallback((id) => {
-    setItems((prev) => prev.filter((i) => i.id !== id))
+  const removeItem = useCallback((cartKey) => {
+    setItems((prev) => prev.filter((i) => i.cartKey !== cartKey))
   }, [])
 
-  const updateQty = useCallback((id, qty) => {
-    if (qty < 1) return removeItem(id)
-    setItems((prev) => prev.map((i) => i.id === id ? { ...i, qty } : i))
+  const updateQty = useCallback((cartKey, qty) => {
+    if (qty < 1) return removeItem(cartKey)
+    setItems((prev) => prev.map((i) => i.cartKey === cartKey ? { ...i, qty } : i))
   }, [removeItem])
 
   const clearCart = useCallback(() => setItems([]), [])
@@ -41,9 +46,10 @@ export function CartProvider({ children }) {
 
   const sendWhatsApp = useCallback(() => {
     if (items.length === 0) return
-    const lines = items.map((i) =>
-      `• ${i.name} (${i.category}) x${i.qty}${i.price ? ' — ' + i.price : ''}`
-    )
+    const lines = items.map((i) => {
+      const sizeStr = i.size ? ` — ${i.size}` : ''
+      return `• ${i.name}${sizeStr} (${i.category}) x${i.qty}${i.price ? ' — ' + i.price : ''}`
+    })
     const msg = `¡Hola! Me interesan estos productos:\n\n${lines.join('\n')}\n\n¿Podrían darme más información?`
     const url = `https://wa.me/${WHATSAPP}?text=${encodeURIComponent(msg)}`
     window.open(url, '_blank', 'noopener,noreferrer')
