@@ -11,20 +11,18 @@ export default function AdminHome() {
 
   return (
     <div>
-      <h1 className="admin-page-title">Dashboard</h1>
-      <div className="admin-stats">
-        <div className="admin-stat-card">
-          <span className="admin-stat-number">{stats.products}</span>
-          <span className="admin-stat-label">Productos</span>
-        </div>
-        <div className="admin-stat-card">
-          <span className="admin-stat-number">{stats.categories}</span>
-          <span className="admin-stat-label">Categorías</span>
-        </div>
-        <div className="admin-stat-card">
-          <span className="admin-stat-number">{stats.intentions}</span>
-          <span className="admin-stat-label">Intenciones</span>
-        </div>
+      <h1 className="font-serif text-[1.6rem] text-dark mb-6">Dashboard</h1>
+      <div className="grid grid-cols-[repeat(auto-fill,minmax(180px,1fr))] gap-5">
+        {[
+          { label: 'Productos', value: stats.products },
+          { label: 'Categorías', value: stats.categories },
+          { label: 'Intenciones', value: stats.intentions },
+        ].map(({ label, value }) => (
+          <div key={label} className="bg-white rounded-xl p-7 px-5 text-center shadow-[0_2px_12px_rgba(0,0,0,0.04)] border border-gold/15">
+            <span className="block font-serif text-[2.2rem] text-gold mb-1">{value}</span>
+            <span className="text-xs text-[#888] tracking-[1px] uppercase">{label}</span>
+          </div>
+        ))}
       </div>
     </div>
   )

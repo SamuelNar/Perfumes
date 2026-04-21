@@ -8,13 +8,10 @@ import { AuthProvider } from './contexts/AuthContext'
 import { CartProvider } from './contexts/CartContext'
 import CartDrawer from './components/CartDrawer'
 
-// Lazy load pages that are not immediately needed
 const Elixires = lazy(() => import('./pages/Elixires'))
 const Nosotros = lazy(() => import('./pages/Nosotros'))
 const Tienda = lazy(() => import('./pages/Tienda'))
 const ProductoDetalle = lazy(() => import('./pages/ProductoDetalle'))
-
-// Lazy load entire admin section
 const AdminRoute = lazy(() => import('./components/AdminRoute'))
 const Login = lazy(() => import('./pages/admin/Login'))
 const Dashboard = lazy(() => import('./pages/admin/Dashboard'))
@@ -48,7 +45,11 @@ export default function App() {
       <BrowserRouter>
         <ScrollToTop />
         <CartDrawer />
-        <Suspense fallback={<div className="page-loader"><div className="page-loader-spinner" /></div>}>
+        <Suspense fallback={
+          <div className="flex items-center justify-center min-h-[60vh]">
+            <div className="w-9 h-9 border-[3px] border-gold/20 border-t-gold rounded-full animate-spin" />
+          </div>
+        }>
         <Routes>
           <Route path="/admin/login" element={<Login />} />
           <Route path="/admin" element={<AdminRoute><Dashboard /></AdminRoute>}>
@@ -75,4 +76,3 @@ export default function App() {
     </AuthProvider>
   )
 }
-
