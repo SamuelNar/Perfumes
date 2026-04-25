@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { adminFetchProducts, adminDeleteProduct } from '../../lib/adminApi'
-import { getImageUrl } from '../../lib/storage'
+import { getProductImageUrl } from '../../lib/storage'
 
 export default function ProductList() {
   const [products, setProducts] = useState([])
@@ -42,7 +42,7 @@ export default function ProductList() {
             {products.map((p) => (
               <tr key={p.id}>
                 <td className="px-4 py-3 text-sm border-b border-black/4 align-middle">
-                  <img src={getImageUrl(p.image_url)} alt={p.name} className="w-[50px] h-[50px] object-cover rounded-md" />
+                  <img src={getProductImageUrl(p)} alt={p.name} className="w-[50px] h-[50px] object-cover rounded-md" />
                 </td>
                 <td className="px-4 py-3 text-sm border-b border-black/4 align-middle">{p.name}</td>
                 <td className="px-4 py-3 text-sm border-b border-black/4 align-middle">{p.categories?.name || '—'}</td>

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { fetchProductById } from '../lib/api'
-import { getImageUrl } from '../lib/storage'
+import { getImageUrl, SIZE_TO_FIELD } from '../lib/storage'
 import { useCart } from '../contexts/CartContext'
 
 const WHATSAPP = '5493584323047'
@@ -39,14 +39,10 @@ export default function ProductoDetalle() {
 
   const getCurrentImageUrl = () => {
     if (!product) return ''
-
-    if (!hasVariants) return product.image_url
-
-    if (selectedSize?.includes('200')) {
-      return product.image_url200ml || product.image_url
-    }
-
-    return product.image_url
+    const fallback = product.image_url || product.image_url10ml || product.image_url100ml || product.image_url200ml || product.image_url250ml || ''
+    if (!selectedSize) return fallback
+    const field = SIZE_TO_FIELD[selectedSize]
+    return (field && product[field]) ? product[field] : fallback
   }
 
   const currentImageUrl = getCurrentImageUrl()

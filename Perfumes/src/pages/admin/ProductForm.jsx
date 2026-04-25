@@ -1,13 +1,22 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { adminCreateProduct, adminUpdateProduct, uploadImage } from '../../lib/adminApi'
+import { adminCreateProduct, adminUpdateProduct, uploadImage, deleteImage } from '../../lib/adminApi'
 import { fetchProductById, fetchCategories, fetchIntentions } from '../../lib/api'
 import { getImageUrl } from '../../lib/storage'
+
+const SIZES = [
+  { label: '10ml',  field: 'image_url10ml'  },
+  { label: '100ml', field: 'image_url100ml' },
+  { label: '120ml', field: 'image_url'       },
+  { label: '200ml', field: 'image_url200ml'  },
+  { label: '250ml', field: 'image_url250ml'  },
+]
 
 const EMPTY = {
   name: '', category_id: '', intention_id: '', short_desc: '', sensory_desc: '',
   price: '', notes: '', size: '', crystal: '', crystal_desc: '', energetic_intention: '',
-  recommended_use: '', image_url: '', featured: false, active: true, sort_order: 0,
+  recommended_use: '', image_url: '', image_url10ml: '', image_url100ml: '', image_url200ml: '', image_url250ml: '',
+  featured: false, active: true, sort_order: 0,
 }
 
 const fieldInput = 'w-full px-[14px] py-2.5 border border-gold/30 rounded-md font-sans text-sm text-dark bg-white focus:outline-none focus:border-gold focus:shadow-[0_0_0_3px_rgba(193,167,121,0.1)]'
@@ -21,8 +30,10 @@ export default function ProductForm() {
   const [form, setForm] = useState(EMPTY)
   const [categories, setCategories] = useState([])
   const [intentions, setIntentions] = useState([])
-  const [imageFile, setImageFile] = useState(null)
-  const [imagePreview, setImagePreview] = useState('')
+  const [selectedSizes, setSelectedSizes] = useState({ '10ml': false, '100ml': false, '120ml': true, '200ml': false, '250ml': false })
+  const [imageFiles, setImageFiles] = useState({})
+  const [imagePreviews, setImagePreviews] = useState({})
+  const pendingDeletesRef = useRef([])
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
 
@@ -37,9 +48,20 @@ export default function ProductForm() {
           short_desc: p.short_desc || '', sensory_desc: p.sensory_desc || '', price: p.price || '',
           notes: p.notes || '', size: p.size || '', crystal: p.crystal || '', crystal_desc: p.crystal_desc || '',
           energetic_intention: p.energetic_intention || '', recommended_use: p.recommended_use || '',
-          image_url: p.image_url || '', featured: p.featured || false, active: p.active ?? true, sort_order: p.sort_order || 0,
+          image_url: p.image_url || '', image_url10ml: p.image_url10ml || '',
+          image_url100ml: p.image_url100ml || '', image_url200ml: p.image_url200ml || '',
+          image_url250ml: p.image_url250ml || '',
+          featured: p.featured || false, active: p.active ?? true, sort_order: p.sort_order || 0,
         })
-        if (p.image_url) setImagePreview(getImageUrl(p.image_url))
+        const active = {}
+        const previews = {}
+        SIZES.forEach(({ label, field }) => {
+          active[label] = Boolean(p[field])
+          if (p[field]) previews[label] = getImageUrl(p[field])
+        })
+        if (!Object.values(active).some(Boolean)) active['120ml'] = true
+        setSelectedSizes(active)
+        setImagePreviews(previews)
       })
     }
   }, [id, isEdit])
@@ -49,11 +71,27 @@ export default function ProductForm() {
     setForm((f) => ({ ...f, [name]: type === 'checkbox' ? checked : value }))
   }
 
-  const handleFileChange = (e) => {
+  const handleSizeToggle = (label) => {
+    const isOn = selectedSizes[label]
+    const { field } = SIZES.find(({ label: l }) => l === label)
+    const next = { ...selectedSizes, [label]: !isOn }
+    const sizeStr = SIZES.filter(({ label: l }) => next[l]).map(({ label: l }) => l).join(' / ')
+
+    setSelectedSizes(next)
+    setForm((f) => ({ ...f, size: sizeStr, ...(isOn && { [field]: '' }) }))
+
+    if (isOn) {
+      if (form[field]) pendingDeletesRef.current = [...pendingDeletesRef.current, form[field]]
+      setImageFiles((f) => { const n = { ...f }; delete n[label]; return n })
+      setImagePreviews((p) => { const n = { ...p }; delete n[label]; return n })
+    }
+  }
+
+  const handleFileChange = (label, e) => {
     const file = e.target.files[0]
     if (!file) return
-    setImageFile(file)
-    setImagePreview(URL.createObjectURL(file))
+    setImageFiles((f) => ({ ...f, [label]: file }))
+    setImagePreviews((p) => ({ ...p, [label]: URL.createObjectURL(file) }))
   }
 
   const handleSubmit = async (e) => {
@@ -61,23 +99,37 @@ export default function ProductForm() {
     setError('')
     setSaving(true)
     try {
-      let imageUrl = form.image_url
-      if (imageFile) {
-        const catName = categories.find((c) => c.id == form.category_id)?.name || 'General'
-        const folderMap = {
-          'Aromas Andinos': 'AromasAndinos', 'Brumas Áuricas': 'BrumasAuricas',
-          'Difusores de varillas': 'DifusoresVarilla', 'Difusores p/ autos': 'DifusoresAutos', 'Home Spray': 'HomeSpray',
-        }
-        const folder = folderMap[catName] || catName.replace(/\s+/g, '')
-        const { path } = await uploadImage(imageFile, folder)
-        imageUrl = path
+      const catName = categories.find((c) => c.id == form.category_id)?.name || 'General'
+      const folderMap = {
+        'Aromas Andinos':      'AromasAndinos',
+        'Brumas Áuricas':      'BrumasAuricas',
+        'Difusores de Varilla': 'DifusoresVarilla',
+        'Difusores para Autos': 'DifusoresAutos',
+        'Home Spray':          'HomeSpray',
       }
+      const folder = folderMap[catName] || catName.replace(/\s+/g, '')
+
+      for (const path of pendingDeletesRef.current) {
+        await deleteImage(path)
+      }
+      pendingDeletesRef.current = []
+
+      const uploadedUrls = {}
+      for (const { label, field } of SIZES) {
+        if (imageFiles[label]) {
+          const { path } = await uploadImage(imageFiles[label], folder)
+          uploadedUrls[field] = path
+        } else {
+          uploadedUrls[field] = form[field]
+        }
+      }
+
       const payload = {
         ...form,
+        ...uploadedUrls,
         category_id: form.category_id ? Number(form.category_id) : null,
         intention_id: form.intention_id ? Number(form.intention_id) : null,
         sort_order: Number(form.sort_order),
-        image_url: imageUrl,
       }
       if (isEdit) { await adminUpdateProduct(id, payload) } else { await adminCreateProduct(payload) }
       navigate('/admin/productos')
@@ -165,10 +217,31 @@ export default function ProductForm() {
           <textarea name="recommended_use" value={form.recommended_use} onChange={handleChange} rows={3} className={`${fieldInput} resize-y`} />
         </div>
         <div className="flex flex-col gap-1.5 mb-4">
-          <label className={fieldLabel}>Imagen</label>
-          <input type="file" accept="image/*" onChange={handleFileChange} className={fieldInput} />
-          {imagePreview && <img src={imagePreview} alt="Preview" className="mt-2 max-w-[200px] max-h-[200px] rounded-lg object-cover" />}
+          <label className={fieldLabel}>Tamaños de imagen</label>
+          <div className="flex gap-4 flex-wrap mt-1">
+            {SIZES.map(({ label }) => (
+              <label key={label} className="flex items-center gap-2 text-sm text-[#555] cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={selectedSizes[label] || false}
+                  onChange={() => handleSizeToggle(label)}
+                  className="w-[18px] h-[18px] accent-gold"
+                />
+                {label}
+              </label>
+            ))}
+          </div>
         </div>
+
+        {SIZES.filter(({ label }) => selectedSizes[label]).map(({ label }) => (
+          <div key={label} className="flex flex-col gap-1.5 mb-4">
+            <label className={fieldLabel}>Imagen {label}</label>
+            <input type="file" accept="image/*" onChange={(e) => handleFileChange(label, e)} className={fieldInput} />
+            {imagePreviews[label] && (
+              <img src={imagePreviews[label]} alt={`Preview ${label}`} className="mt-2 max-w-[200px] max-h-[200px] rounded-lg object-cover" />
+            )}
+          </div>
+        ))}
 
         <div className="flex gap-6 mb-5">
           <label className="flex items-center gap-2 text-sm text-[#555] cursor-pointer">

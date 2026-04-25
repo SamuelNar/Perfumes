@@ -116,8 +116,7 @@ export async function adminDeleteIntention(id) {
 // ─── IMAGE UPLOAD ─────────────────────────────────────
 
 export async function uploadImage(file, folder) {
-  const ext = file.name.split('.').pop()
-  const fileName = `${Date.now()}_${Math.random().toString(36).slice(2, 8)}.${ext}`
+  const fileName = file.name.replace(/\s+/g, '_')
   const path = `${folder}/${fileName}`
 
   const { error } = await supabase.storage.from(BUCKET).upload(path, file, {

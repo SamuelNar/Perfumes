@@ -1,6 +1,6 @@
 import { memo } from 'react'
 import { Link } from 'react-router-dom'
-import { getImageUrl } from '../lib/storage'
+import { getProductImageUrl } from '../lib/storage'
 import { useCart } from '../contexts/CartContext'
 
 export default memo(function ProductCard({ product }) {
@@ -21,7 +21,7 @@ export default memo(function ProductCard({ product }) {
     >
       <div className="relative aspect-square overflow-hidden">
         <img
-          src={getImageUrl(product.image_url)}
+          src={getProductImageUrl(product)}
           alt={product.name}
           loading="lazy"
           className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"

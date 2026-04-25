@@ -1,7 +1,11 @@
 {
   "permissions": {
     "allow": [
-      "Bash(claude plugin *)"
+      "Bash(claude plugin *)",
+      "Skill(update-config)"
     ]
+  },
+  "env": {
+    "CAVEMAN_DEFAULT_MODE": "full"
   }
 }
